@@ -1,0 +1,81 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Deep & Natasha — Wedding Invitation</title>
+  <style>
+    body, html {
+      margin: 0;
+      padding: 0;
+      width: 100%;
+      height: 100%;
+      overflow: hidden;
+      background-color: #faf3e0;
+    }
+    iframe {
+      width: 100%;
+      height: 100%;
+      border: none;
+      display: block;
+    }
+  </style>
+</head>
+<body>
+  <iframe id="main-frame" src="wedding-invitation.html"></iframe>
+
+  <script>
+    // ✏️ PARENT AUDIO PLAYER
+    var bgMusic = new Audio('music.mp3');
+    bgMusic.loop = true;
+    bgMusic.volume = 0.6;
+    var musicPlaying = false;
+
+    // Communication API for Iframe child
+    window.playMusic = function() {
+      if (musicPlaying) return;
+      bgMusic.play().then(function() {
+        musicPlaying = true;
+        syncChildUI(true);
+      }).catch(function(err) {
+        console.log("Audio play blocked by browser:", err);
+      });
+    };
+
+    window.pauseMusic = function() {
+      if (!musicPlaying) return;
+      bgMusic.pause();
+      musicPlaying = false;
+      syncChildUI(false);
+    };
+
+    window.toggleMusic = function() {
+      if (musicPlaying) {
+        window.pauseMusic();
+      } else {
+        window.playMusic();
+      }
+    };
+
+    window.isMusicPlaying = function() {
+      return musicPlaying;
+    };
+
+    function syncChildUI(isPlaying) {
+      var iframe = document.getElementById('main-frame');
+      if (iframe && iframe.contentWindow && typeof iframe.contentWindow.syncMusicUI === 'function') {
+        iframe.contentWindow.syncMusicUI(isPlaying);
+      }
+    }
+
+    // Auto-sync music controls state when iframe loads new pages
+    var iframeEl = document.getElementById('main-frame');
+    iframeEl.addEventListener('load', function() {
+      // Small timeout to allow child page DOM to build
+      setTimeout(function() {
+        syncChildUI(musicPlaying);
+      }, 300);
+    });
+  </script>
+</body>
+</html>

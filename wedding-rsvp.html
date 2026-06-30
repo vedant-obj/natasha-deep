@@ -1,0 +1,827 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>You're Invited ✦</title>
+<link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,300;0,400;0,500;1,300;1,400;1,500&family=Jost:wght@300;400;500&display=swap" rel="stylesheet" />
+<style>
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+  :root {
+    --cream: #FDFAF6; --warm-white: #FAF7F2; --border: #E8E2D9;
+    --text-dark: #2C2420; --text-mid: #6B5E57; --text-light: #9E918A;
+    --gold: #B8963E; --gold-light: #F5EDD6; --gold-border: #D4B87A;
+    --green: #3B6D11; --green-light: #EAF3DE;
+    --red: #A32D2D; --red-light: #FCEBEB;
+    --pink: #993556; --pink-light: #FBEAF0;
+    --amber: #854F0B; --amber-light: #FAEEDA;
+  }
+  body { font-family: 'Jost', sans-serif; background: var(--cream); color: var(--text-dark); min-height: 100vh; display: flex; flex-direction: column; align-items: center; padding: 3rem 1.5rem 5rem; }
+  @keyframes fadeUp { from { opacity:0; transform:translateY(16px); } to { opacity:1; transform:translateY(0); } }
+  .fade { animation: fadeUp 0.45s ease both; }
+
+  .ornament { font-family: 'Cormorant Garamond', serif; font-size: 1.1rem; color: var(--gold); letter-spacing: 0.4em; margin-bottom: 2rem; opacity: 0.6; }
+
+  /* Setup screen removed — config hardcoded */
+
+  /* ── Entry screen ── */
+  #entry-screen { width:100%; max-width:380px; text-align:center; display:none; }
+  .couple-name { font-family:'Cormorant Garamond',serif; font-size:3rem; font-weight:300; line-height:1.1; }
+  .couple-name em { font-style:italic; color:var(--gold); }
+  .wedding-date { font-size:0.72rem; letter-spacing:0.2em; text-transform:uppercase; color:var(--text-light); margin:0.5rem 0 2.5rem; }
+  .divider { display:flex; align-items:center; gap:1rem; margin-bottom:2rem; }
+  .divider-line { flex:1; height:1px; background:var(--border); }
+  .divider-star { color:var(--gold); font-size:0.75rem; opacity:0.55; }
+  .entry-label { font-size:0.68rem; text-transform:uppercase; letter-spacing:0.15em; color:var(--text-light); margin-bottom:0.6rem; }
+  #code-input { width:100%; padding:14px 18px; font-size:1.1rem; font-family:monospace; text-align:center; letter-spacing:0.2em; text-transform:uppercase; border:1px solid var(--border); border-radius:8px; background:#fff; color:var(--text-dark); outline:none; margin-bottom:0.75rem; transition:border-color 0.2s, box-shadow 0.2s; }
+  #code-input:focus { border-color:var(--gold-border); box-shadow:0 0 0 3px rgba(184,150,62,0.1); }
+  #btn-enter { width:100%; background:var(--text-dark); color:#fff; border:none; padding:13px; border-radius:8px; font-family:'Jost',sans-serif; font-size:0.78rem; letter-spacing:0.15em; text-transform:uppercase; cursor:pointer; transition:background 0.2s; }
+  #btn-enter:hover { background:var(--gold); }
+  #btn-enter:disabled { opacity:0.5; cursor:not-allowed; }
+  #error-msg { font-size:0.78rem; color:var(--red); margin-top:0.75rem; display:none; line-height:1.5; }
+  #spinner   { font-size:0.8rem; color:var(--text-light); margin-top:1rem; display:none; }
+
+  /* ── Invite card ── */
+  #invite-screen { width:100%; max-width:520px; display:none; }
+  .invite-card { background:#fff; border:1px solid var(--border); border-radius:16px; overflow:hidden; margin-bottom:1.25rem; }
+  .invite-header { background:var(--text-dark); color:#fff; padding:2.5rem 2rem 2rem; text-align:center; }
+  .inv-ornament { font-size:0.7rem; letter-spacing:0.35em; opacity:0.35; text-transform:uppercase; margin-bottom:0.75rem; }
+  .inv-greeting { font-family:'Cormorant Garamond',serif; font-size:0.95rem; font-weight:300; opacity:0.55; margin-bottom:0.2rem; }
+  .inv-name { font-family:'Cormorant Garamond',serif; font-size:2.4rem; font-weight:300; font-style:italic; color:var(--gold-border); line-height:1.15; margin-bottom:0.35rem; }
+  .inv-sub { font-size:0.68rem; letter-spacing:0.14em; text-transform:uppercase; opacity:0.35; }
+  .invite-body { padding:2rem; }
+  .invite-intro { text-align:center; font-family:'Cormorant Garamond',serif; font-size:1rem; font-style:italic; color:var(--text-mid); line-height:1.75; margin-bottom:1.75rem; }
+  .events-heading { font-size:0.66rem; text-transform:uppercase; letter-spacing:0.15em; color:var(--text-light); margin-bottom:0.9rem; }
+  .event-block { border:1px solid var(--border); border-radius:10px; padding:1rem 1.25rem; margin-bottom:0.6rem; display:flex; gap:1rem; align-items:flex-start; transition:border-color 0.2s, background 0.2s; }
+  .event-block.declined { opacity:0.45; }
+  .event-icon { width:36px; height:36px; border-radius:50%; display:flex; align-items:center; justify-content:center; font-size:0.95rem; flex-shrink:0; }
+  .ev-wedding .event-icon { background:var(--gold-light); }
+  .ev-haldi   .event-icon { background:var(--amber-light); }
+  .ev-sangeet .event-icon { background:var(--pink-light); }
+  .ev-mehendi .event-icon { background:var(--green-light); }
+  .event-name { font-size:0.72rem; text-transform:uppercase; letter-spacing:0.1em; font-weight:500; margin-bottom:3px; }
+  .ev-wedding .event-name { color:var(--gold); }
+  .ev-haldi   .event-name { color:var(--amber); }
+  .ev-sangeet .event-name { color:var(--pink); }
+  .ev-mehendi .event-name { color:var(--green); }
+  .event-venue { font-size:0.82rem; color:var(--text-mid); }
+  .event-date  { font-size:0.76rem; color:var(--text-light); margin-top:2px; }
+
+  /* ── RSVP steps inside card ── */
+  .rsvp-section { background:var(--warm-white); border-radius:10px; padding:1.5rem; margin-top:1.5rem; text-align:center; }
+  .rsvp-question { font-family:'Cormorant Garamond',serif; font-size:1.2rem; font-style:italic; color:var(--text-dark); margin-bottom:1rem; }
+  .rsvp-sub { font-size:0.78rem; color:var(--text-light); margin-bottom:1rem; line-height:1.5; }
+
+  .rsvp-btns { display:flex; gap:0.75rem; justify-content:center; flex-wrap:wrap; }
+  .btn-yes { background:var(--text-dark); color:#fff; border:none; padding:11px 28px; border-radius:7px; font-family:'Jost',sans-serif; font-size:0.76rem; letter-spacing:0.1em; text-transform:uppercase; cursor:pointer; transition:background 0.2s; }
+  .btn-yes:hover { background:var(--green); }
+  .btn-no  { background:#fff; color:var(--text-mid); border:1px solid var(--border); padding:11px 28px; border-radius:7px; font-family:'Jost',sans-serif; font-size:0.76rem; letter-spacing:0.1em; text-transform:uppercase; cursor:pointer; transition:all 0.2s; }
+  .btn-no:hover { border-color:var(--red); color:var(--red); background:var(--red-light); }
+
+  /* Headcount step */
+  .headcount-wrap { display:flex; align-items:center; justify-content:center; gap:1rem; margin:0.5rem 0 1.25rem; }
+  .count-btn { width:36px; height:36px; border-radius:50%; border:1px solid var(--border); background:#fff; font-size:1.1rem; cursor:pointer; display:flex; align-items:center; justify-content:center; color:var(--text-dark); transition:all 0.15s; flex-shrink:0; }
+  .count-btn:hover { border-color:var(--gold-border); background:var(--gold-light); }
+  .count-num { font-family:'Cormorant Garamond',serif; font-size:2.2rem; font-weight:300; min-width:2rem; text-align:center; line-height:1; }
+  .count-label { font-size:0.7rem; color:var(--text-light); text-transform:uppercase; letter-spacing:0.1em; margin-bottom:0.25rem; }
+
+  /* Event selection (attending / not-attending per event) */
+  .event-select-block {
+    border:1px solid var(--border); border-radius:10px; padding:0.9rem 1.1rem;
+    margin-bottom:0.6rem; display:flex; align-items:center; justify-content:space-between;
+    gap:1rem; cursor:pointer; transition:border-color 0.15s, background 0.15s;
+  }
+  .event-select-block.attending { border-color:var(--green); background:var(--green-light); }
+  .event-select-block.skipping  { border-color:var(--border); background:#fff; opacity:0.55; }
+  .ev-select-left { display:flex; align-items:center; gap:0.75rem; }
+  .ev-select-icon { width:32px; height:32px; border-radius:50%; display:flex; align-items:center; justify-content:center; font-size:0.9rem; flex-shrink:0; }
+  .ev-wedding .ev-select-icon { background:var(--gold-light); }
+  .ev-haldi   .ev-select-icon { background:var(--amber-light); }
+  .ev-sangeet .ev-select-icon { background:var(--pink-light); }
+  .ev-mehendi .ev-select-icon { background:var(--green-light); }
+  .ev-select-name { font-size:0.78rem; font-weight:500; text-transform:uppercase; letter-spacing:0.08em; }
+  .ev-wedding .ev-select-name { color:var(--gold); }
+  .ev-haldi   .ev-select-name { color:var(--amber); }
+  .ev-sangeet .ev-select-name { color:var(--pink); }
+  .ev-mehendi .ev-select-name { color:var(--green); }
+  .ev-select-date { font-size:0.72rem; color:var(--text-light); margin-top:1px; }
+  .ev-toggle { width:22px; height:22px; border-radius:50%; border:1.5px solid var(--border); flex-shrink:0; display:flex; align-items:center; justify-content:center; font-size:0.7rem; color:transparent; transition:all 0.15s; }
+  .event-select-block.attending .ev-toggle { border-color:var(--green); background:var(--green); color:#fff; }
+
+  .btn-submit { width:100%; background:var(--text-dark); color:#fff; border:none; padding:13px; border-radius:8px; font-family:'Jost',sans-serif; font-size:0.78rem; letter-spacing:0.12em; text-transform:uppercase; cursor:pointer; transition:background 0.2s; margin-top:0.25rem; }
+  .btn-submit:hover { background:var(--green); }
+  .btn-submit:disabled { opacity:0.4; cursor:not-allowed; }
+
+  .rsvp-saving-msg { font-size:0.78rem; color:var(--text-light); margin-top:0.75rem; display:none; text-align:center; }
+
+  /* Confirmed */
+  #rsvp-confirmed { display:none; text-align:center; padding:1.5rem 1rem; }
+  .confirmed-icon { font-size:2rem; margin-bottom:0.5rem; }
+  .confirmed-text { font-family:'Cormorant Garamond',serif; font-size:1.05rem; font-style:italic; color:var(--text-mid); margin-bottom:1rem; }
+  .confirmed-summary { background:var(--warm-white); border-radius:8px; padding:1rem 1.25rem; text-align:left; }
+  .confirmed-summary-label { font-size:0.66rem; text-transform:uppercase; letter-spacing:0.12em; color:var(--text-light); margin-bottom:0.6rem; }
+  .confirmed-event-row { display:flex; align-items:center; gap:0.6rem; font-size:0.8rem; padding:3px 0; }
+  .confirmed-event-row .tick { color:var(--green); font-size:0.8rem; }
+  .confirmed-event-row .cross { color:var(--text-light); font-size:0.8rem; }
+
+  .footer-note { text-align:center; font-size:0.7rem; color:var(--text-light); letter-spacing:0.06em; }
+
+  /* Step visibility helpers */
+  .step { display:none; }
+  .step.active { display:block; animation:fadeUp 0.4s ease both; }
+
+  /* ── Photo upload ── */
+  .photo-section { margin-top: 1.25rem; background: var(--warm-white); border-radius: 10px; padding: 1.5rem; text-align: center; animation: fadeUp 0.5s ease both; }
+  .photo-title { font-family: 'Cormorant Garamond', serif; font-size: 1.1rem; font-style: italic; color: var(--text-dark); margin-bottom: 0.3rem; }
+  .photo-sub { font-size: 0.78rem; color: var(--text-light); margin-bottom: 1.1rem; line-height: 1.5; }
+  .photo-drop {
+    border: 1.5px dashed var(--gold-border); border-radius: 10px; padding: 1.5rem 1rem;
+    cursor: pointer; transition: background 0.2s; position: relative; background: #fff;
+  }
+  .photo-drop:hover { background: var(--gold-light); }
+  .photo-drop input[type=file] { position: absolute; inset: 0; opacity: 0; cursor: pointer; width: 100%; height: 100%; }
+  .photo-drop-icon { font-size: 1.6rem; margin-bottom: 0.4rem; }
+  .photo-drop-text { font-size: 0.78rem; color: var(--text-mid); }
+  .photo-preview { margin-top: 0.9rem; display: none; }
+  .photo-preview img { width: 100%; max-height: 220px; object-fit: cover; border-radius: 8px; border: 1px solid var(--border); }
+  .btn-upload-photo { width: 100%; margin-top: 0.75rem; background: var(--text-dark); color: #fff; border: none; padding: 11px; border-radius: 7px; font-family: 'Jost', sans-serif; font-size: 0.76rem; letter-spacing: 0.12em; text-transform: uppercase; cursor: pointer; transition: background 0.2s; display: none; }
+  .btn-upload-photo:hover { background: var(--gold); }
+  .btn-upload-photo:disabled { opacity: 0.4; cursor: not-allowed; }
+  .photo-status { font-size: 0.76rem; color: var(--text-light); margin-top: 0.6rem; display: none; }
+  .photo-done { font-size: 0.78rem; color: var(--green); margin-top: 0.6rem; display: none; }
+  .photo-skip { font-size: 0.72rem; color: var(--text-light); margin-top: 0.6rem; cursor: pointer; text-decoration: underline; background: none; border: none; font-family: 'Jost', sans-serif; }
+  .photo-skip:hover { color: var(--text-mid); }
+  #mb{position:fixed;top:12px;right:14px;z-index:200;width:44px;height:44px;border-radius:50%;background:var(--text-dark);border:2px solid var(--gold-border);display:flex;align-items:center;justify-content:center;cursor:pointer;transition:all .3s;box-shadow:0 3px 16px rgba(0,0,0,.15);outline:none;}
+  #mb:hover{background:var(--gold);border-color:var(--gold-border)}
+</style>
+</head>
+<body>
+
+<button id="mb" onclick="toggleMusic()"><svg id="mi" width="18" height="18" viewBox="0 0 18 18" fill="none"><path d="M9 2L5 6H2v6h3l4 4V2z" stroke="#faf3e0" stroke-width="1.3" fill="none"/><line x1="13" y1="5" x2="16" y2="13" stroke="#faf3e0" stroke-width="1.5" stroke-linecap="round"/><line x1="16" y1="5" x2="13" y2="13" stroke="#faf3e0" stroke-width="1.5" stroke-linecap="round"/></svg></button>
+
+<div class="ornament">✦ &nbsp; ✦ &nbsp; ✦</div>
+
+<!-- Firebase config is hardcoded below — no setup screen for guests -->
+
+<!-- Entry -->
+<div id="entry-screen" style="display:block">
+  <div class="couple-name">Natasha<br/>&amp; <em>Deep</em></div>
+  <div class="wedding-date">Wedding Celebrations — December 2026</div>
+  <div class="divider"><div class="divider-line"></div><span class="divider-star">✦</span><div class="divider-line"></div></div>
+  <div class="entry-label" id="code-label">Enter your invitation code</div>
+  <input type="text" id="code-input" placeholder="e.g. PRIY4XK" maxlength="12" autocomplete="off" />
+  <div id="name-input-wrapper" style="display:none; margin-top: 1rem; text-align: center;">
+    <div class="entry-label">Enter your name</div>
+    <input type="text" id="guest-name-input" placeholder="e.g. Priya Sharma" style="width:100%; padding:14px 18px; font-size:1.1rem; border:1px solid var(--border); border-radius:8px; background:#fff; color:var(--text-dark); outline:none; text-align:center; margin-bottom:0.75rem; transition:border-color 0.2s, box-shadow 0.2s;" />
+  </div>
+  <button id="btn-enter">View My Invite</button>
+  <div id="error-msg"></div>
+  <div id="spinner">Looking up your invitation…</div>
+</div>
+
+<!-- Invite -->
+<div id="invite-screen">
+  <div class="invite-card">
+    <div class="invite-header">
+      <div class="inv-ornament">✦ &nbsp; You are cordially invited &nbsp; ✦</div>
+      <div class="inv-greeting">Warmly welcoming</div>
+      <div class="inv-name" id="guest-display-name">&nbsp;</div>
+      <div class="inv-sub">to the celebrations of</div>
+    </div>
+    <div class="invite-body">
+      <div class="invite-intro">We joyfully request the pleasure of your company<br/>as we celebrate love, togetherness, and new beginnings.</div>
+      <div class="events-heading">Your personal invite includes</div>
+      <div id="events-list"></div>
+
+      <!-- STEP A: Will you attend? -->
+      <div class="rsvp-section" id="step-attend">
+        <div class="rsvp-question">Will you be joining us?</div>
+        <div class="rsvp-btns">
+          <button class="btn-yes" id="btn-yes">Joyfully attending</button>
+          <button class="btn-no"  id="btn-no">Regretfully unable</button>
+        </div>
+      </div>
+
+      <!-- STEP B: How many + which events (shown only if attending) -->
+      <div class="rsvp-section step" id="step-details">
+        
+        <!-- Ornate Details Fields (Shown for Yes RSVP first) -->
+        <div id="details-form-fields">
+          <div class="rsvp-question">Wonderful! A few quick details</div>
+
+          <!-- Headcount -->
+          <div class="count-label">How many guests are attending?</div>
+          <div class="headcount-wrap">
+            <button class="count-btn" id="btn-minus">−</button>
+            <div class="count-num" id="count-display">1</div>
+            <button class="count-btn" id="btn-plus">+</button>
+          </div>
+
+          <!-- Per-event toggle -->
+          <div style="text-align:left; margin-top:1rem;">
+            <div class="events-heading">Which events will you attend?</div>
+            <div id="event-toggles"></div>
+          </div>
+
+          <!-- Photo upload (integrated in Step B) -->
+          <div class="photo-section" id="photo-section" style="margin-top: 1.5rem; border-top: 1px solid var(--border); padding-top: 1.25rem;">
+            <div class="photo-title">Share a photo! 📸</div>
+            <div class="photo-sub">Optional: We'd love to see photos from your wedding! Share them with us for a quite little surprise! 😊❤️</div>
+            <div class="photo-drop" id="photo-drop">
+              <input type="file" id="photo-input" accept="image/*" />
+              <div class="photo-drop-icon">🖼</div>
+              <div class="photo-drop-text">Tap to choose a photo</div>
+            </div>
+            <div class="photo-preview" id="photo-preview">
+              <img id="photo-img" src="" alt="Your photo" />
+            </div>
+          </div>
+        </div>
+
+        <!-- Email Confirmation Fields (Shown right before submit) -->
+        <div id="email-confirm-fields" style="display:none; text-align:center; animation:fadeUp 0.4s ease both; margin-top:1.25rem; border-top:1px solid var(--border); padding-top:1rem;">
+          <div class="rsvp-question" style="font-size:1.05rem; margin-bottom:0.3rem;">May we send you a confirmation? ✦</div>
+          <div class="rsvp-sub" style="font-size:0.75rem; color:var(--text-light); margin-bottom:0.75rem; line-height:1.4;">Please share your email address so we can send over your RSVP details and keep you updated on the celebrations.</div>
+          <input type="email" id="guest-email-input" placeholder="e.g. name@example.com" style="width:100%; max-width:300px; padding:10px 14px; font-size:0.9rem; border:1px solid var(--border); border-radius:6px; background:#fff; color:var(--text-dark); outline:none; text-align:center; margin:0 auto 0.5rem; display:block; transition:border-color 0.2s;" />
+        </div>
+
+        <button class="btn-submit" id="btn-submit">Confirm My RSVP</button>
+        <div class="rsvp-saving-msg" id="rsvp-saving">Saving your response…</div>
+        <div id="rsvp-error-msg" style="font-size:0.78rem; color:var(--red); margin-top:0.75rem; display:none; line-height:1.5; text-align:center;"></div>
+      </div>
+
+      <!-- Confirmed state -->
+      <div id="rsvp-confirmed">
+        <div class="confirmed-icon" id="confirmed-icon"></div>
+        <div class="confirmed-text" id="confirmed-text"></div>
+        <div class="confirmed-summary" id="confirmed-summary" style="display:none"></div>
+        <div id="confirmed-photo" style="display:none; margin-top: 1.25rem;">
+          <div class="confirmed-summary-label">Your uploaded photo</div>
+          <img id="confirmed-img" src="" alt="Your photo" style="width:100%; max-height:220px; object-fit:cover; border-radius:8px; border:1px solid var(--border); margin-top: 0.5rem;" />
+        </div>
+      </div>
+    </div>
+  </div>
+  <div class="footer-note"></div>
+</div>
+
+<script src="https://cdn.jsdelivr.net/npm/@emailjs/browser@4/dist/email.min.js"></script>
+<script type="module">
+import { initializeApp, getApps } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-app.js";
+import { getFirestore, collection, query, where,
+         getDocs, doc, updateDoc, addDoc, serverTimestamp }
+       from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
+
+// ── Event details ─────────────────────────────────
+const EVENTS = {
+  wedding: { label:"The Wedding",    icon:"✦",  date:"Sunday, 13th December 2026",  time:"11:00 AM", venue:"BAPS Shri Swaminarayan Mandir, Nadiad",    dress:"Dress Code: Traditional Indian Formal" },
+  haldi:   { label:"Haldi Ceremony", icon:"🌿", date:"Saturday, 12th December 2026",    time:"10:00 AM", venue:"BAPS Shri Swaminarayan Mandir, Nadiad",       dress:"Dress Code: Shades of Yellow / Mustard" },
+  sangeet: { label:"Sangeet Night",  icon:"◈",  date:"Saturday, 12th December 2026",  time:"7:00 PM",  venue:"BAPS Shri Swaminarayan Mandir, Nadiad", dress:"Dress Code: Indo-Western / Evening Glamour" },
+  mehendi: { label:"Mehendi",        icon:"◇",  date:"Saturday, 12th December 2026",    time:"3:00 PM",  venue:"BAPS Shri Swaminarayan Mandir, Nadiad",       dress:"Dress Code: Floral & Vibrant Green" },
+};
+
+// ── State ─────────────────────────────────────────
+let db           = null;
+let guestDocId   = null;
+let guestEvents  = [];          // events this guest is invited to
+let attendingEvents = new Set(); // which they will actually attend
+let headcount    = 1;
+let isPasswordLogin = false;
+let guestName       = "";
+let guestContact    = "";
+let rsvpAnswer      = "yes";
+const PASSCODE_ALL_EVENTS = "deep";
+const PASSCODE_WEDDING_ONLY = "natasha";
+
+// ── DOM refs ──────────────────────────────────────
+const elEntry       = document.getElementById("entry-screen");
+const elInvite      = document.getElementById("invite-screen");
+const elCode        = document.getElementById("code-input");
+const elBtnEnter    = document.getElementById("btn-enter");
+const elError       = document.getElementById("error-msg");
+const elSpinner     = document.getElementById("spinner");
+const elName        = document.getElementById("guest-display-name");
+const elEventsList  = document.getElementById("events-list");
+const elStepAttend  = document.getElementById("step-attend");
+const elStepDetails = document.getElementById("step-details");
+const elBtnYes      = document.getElementById("btn-yes");
+const elBtnNo       = document.getElementById("btn-no");
+const elCountDisp   = document.getElementById("count-display");
+const elBtnMinus    = document.getElementById("btn-minus");
+const elBtnPlus     = document.getElementById("btn-plus");
+const elEventToggles= document.getElementById("event-toggles");
+const elBtnSubmit   = document.getElementById("btn-submit");
+const elRsvpSaving  = document.getElementById("rsvp-saving");
+const elConfirmed   = document.getElementById("rsvp-confirmed");
+const elConfIcon    = document.getElementById("confirmed-icon");
+const elConfText    = document.getElementById("confirmed-text");
+const elNameWrapper = document.getElementById("name-input-wrapper");
+const elGuestNameInput = document.getElementById("guest-name-input");
+const elConfPhoto   = document.getElementById("confirmed-photo");
+const elConfImg     = document.getElementById("confirmed-img");
+
+// ── All listeners here ────────────────────────────
+elBtnEnter.addEventListener("click",  doLookup);
+elCode.addEventListener("keydown", e => { if (e.key === "Enter") doLookup(); });
+elGuestNameInput.addEventListener("keydown", e => { if (e.key === "Enter") doLookup(); });
+elBtnYes.addEventListener("click",   () => { rsvpAnswer = "yes"; showDetailsStep(); });
+elBtnNo.addEventListener("click",    () => { rsvpAnswer = "no"; showEmailOnlyStep(); });
+elBtnMinus.addEventListener("click",  () => changeCount(-1));
+elBtnPlus.addEventListener("click",   () => changeCount(+1));
+elBtnSubmit.addEventListener("click", () => {
+  const elEmailInput = document.getElementById("guest-email-input");
+  const emailVal = elEmailInput ? elEmailInput.value.trim() : "";
+  if (!emailVal || !emailVal.includes("@")) {
+    const elRsvpError = document.getElementById("rsvp-error-msg");
+    if (elRsvpError) {
+      elRsvpError.textContent = "Please enter a valid email address so we can send your confirmation.";
+      elRsvpError.style.display = "block";
+    }
+    return;
+  }
+  submitRSVP(rsvpAnswer, rsvpAnswer === "yes" ? headcount : 0, rsvpAnswer === "yes" ? [...attendingEvents] : []);
+});
+
+const elGuestEmailInput = document.getElementById("guest-email-input");
+if (elGuestEmailInput) {
+  elGuestEmailInput.addEventListener("keydown", e => {
+    if (e.key === "Enter") {
+      elBtnSubmit.click();
+    }
+  });
+}
+
+// ── Load saved Firebase config ────────────────────
+// ════════════════════════════════════════════════
+//  FIREBASE CONFIG — paste YOUR values here once
+//  Guests will never see this — it's in the code
+// ════════════════════════════════════════════════
+const FIREBASE_CONFIG = {
+  apiKey:        "AIzaSyCJhrIXLt28UZ58y5PudFqZ3j5W6LrIT9g",
+  authDomain:    "natashawedding-af3a4.firebaseapp.com",
+  projectId:     "natashawedding-af3a4",
+  storageBucket: "natashawedding-af3a4.firebasestorage.app",
+};
+
+// ════════════════════════════════════════════════
+//  EMAILJS CONFIG — paste YOUR values here once
+// ════════════════════════════════════════════════
+const EMAILJS_CONFIG = {
+  pubKey:     "PASTE_YOUR_EMAILJS_PUBLIC_KEY",
+  serviceId:  "PASTE_YOUR_SERVICE_ID",
+  confirmTpl: "PASTE_YOUR_CONFIRMATION_TEMPLATE_ID",
+};
+
+// ── Auto-connect on load ──────────────────────────
+async function initDB() {
+  try {
+    const existing = getApps().find(a => a.name === "wedding-rsvp");
+    const app = existing || initializeApp(FIREBASE_CONFIG, "wedding-rsvp");
+    db = getFirestore(app);
+    // Auto-lookup if code is in the URL
+    const urlCode = new URLSearchParams(window.location.search).get("code");
+    if (urlCode) { elCode.value = urlCode.toUpperCase(); doLookup(); }
+  } catch(e) {
+    showErr("Could not connect to server. Please try refreshing.");
+    console.error("Firebase init error:", e);
+  }
+}
+initDB();
+
+// ════════════════════════════════════════════════
+//  LOOKUP
+// ════════════════════════════════════════════════
+async function doLookup() {
+  const code = elCode.value.trim().toUpperCase();
+  if (!code) { showErr("Please enter your invitation code."); return; }
+
+  // Check if passcode-based login
+  if (code === PASSCODE_ALL_EVENTS.toUpperCase() || code === PASSCODE_WEDDING_ONLY.toUpperCase()) {
+    if (elNameWrapper.style.display === "none") {
+      const elCodeLabel = document.getElementById("code-label");
+      if (elCodeLabel) elCodeLabel.style.display = "none";
+      elCode.style.display = "none";
+
+      elNameWrapper.style.display = "block";
+      elBtnEnter.textContent = "View My Invite";
+      elError.style.display = "none";
+      elGuestNameInput.focus();
+      return;
+    }
+
+    const nameVal = elGuestNameInput.value.trim();
+    if (!nameVal) {
+      showErr("Please enter your name to personalize your invitation.");
+      return;
+    }
+
+    isPasswordLogin = true;
+    guestName = nameVal;
+    guestEvents = code === PASSCODE_ALL_EVENTS.toUpperCase() 
+      ? ["wedding", "haldi", "sangeet", "mehendi"] 
+      : ["wedding"];
+
+    renderInvite({
+      id: "pwd-login",
+      name: guestName,
+      events: guestEvents,
+      rsvp: "pending"
+    });
+    return;
+  }
+
+  elError.style.display = "none";
+  elSpinner.style.display = "block";
+  elBtnEnter.disabled = true;
+
+  try {
+    const snap = await getDocs(query(collection(db,"guests"), where("code","==",code)));
+    elSpinner.style.display = "none";
+    elBtnEnter.disabled = false;
+    if (snap.empty) { showErr("We couldn't find that code. Please check and try again."); return; }
+    const d = snap.docs[0];
+    renderInvite({ id: d.id, ...d.data() });
+  } catch(e) {
+    elSpinner.style.display = "none";
+    elBtnEnter.disabled = false;
+    showErr("Something went wrong: " + e.message);
+  }
+}
+
+// ════════════════════════════════════════════════
+//  RENDER INVITE
+// ════════════════════════════════════════════════
+function renderInvite(guest) {
+  guestDocId  = guest.id;
+  guestEvents = guest.events || [];
+  guestContact = guest.contact || "";
+
+  elEntry.style.display  = "none";
+  elInvite.style.display = "block";
+  elName.textContent = guest.name;
+
+  const elEmailInput = document.getElementById("guest-email-input");
+  if (elEmailInput) {
+    elEmailInput.value = guestContact;
+  }
+
+  // Static event display
+  elEventsList.innerHTML = guestEvents.map(key => {
+    const ev = EVENTS[key]; if (!ev) return "";
+    return `<div class="event-block ev-${key}">
+      <div class="event-icon">${ev.icon}</div>
+      <div>
+        <div class="event-name">${ev.label}</div>
+        <div class="event-venue">${ev.venue}</div>
+        <div class="event-date">${ev.date} · ${ev.time}</div>
+        <div class="event-dress" style="font-size:0.75rem; color:var(--gold); margin-top:3px; font-style:italic; font-weight:500;">👗 ${ev.dress}</div>
+      </div>
+    </div>`;
+  }).join("");
+
+  // If already responded, show confirmed screen
+  if (guest.rsvp === "yes" || guest.rsvp === "no") {
+    showAlreadyConfirmed(guest);
+    return;
+  }
+
+  elStepAttend.style.display = "block";
+}
+
+// ════════════════════════════════════════════════
+//  STEP B — details (headcount + event selection)
+// ════════════════════════════════════════════════
+function showDetailsStep() {
+  elStepAttend.style.display  = "none";
+  elStepDetails.classList.add("active");
+
+  // Show details form and email confirm fields
+  document.getElementById("details-form-fields").style.display = "block";
+  document.getElementById("email-confirm-fields").style.display = "block";
+
+  // Reset headcount
+  headcount = 1;
+  elCountDisp.textContent = "1";
+
+  // Default: attending ALL invited events
+  attendingEvents = new Set(guestEvents);
+  buildEventToggles();
+
+  // Hide any previous error
+  const elRsvpError = document.getElementById("rsvp-error-msg");
+  if (elRsvpError) elRsvpError.style.display = "none";
+}
+
+function showEmailOnlyStep() {
+  elStepAttend.style.display  = "none";
+  elStepDetails.classList.add("active");
+
+  // Hide details form, show only email confirm fields
+  document.getElementById("details-form-fields").style.display = "none";
+  document.getElementById("email-confirm-fields").style.display = "block";
+
+  // Hide any previous error
+  const elRsvpError = document.getElementById("rsvp-error-msg");
+  if (elRsvpError) elRsvpError.style.display = "none";
+}
+
+function buildEventToggles() {
+  elEventToggles.innerHTML = guestEvents.map(key => {
+    const ev = EVENTS[key]; if (!ev) return "";
+    const isOn = attendingEvents.has(key);
+    return `
+      <div class="event-select-block ev-${key} ${isOn ? "attending" : "skipping"}" data-key="${key}">
+        <div class="ev-select-left">
+          <div class="ev-select-icon ev-${key}">${ev.icon}</div>
+          <div>
+            <div class="ev-select-name ev-${key}">${ev.label}</div>
+            <div class="ev-select-date">${ev.date} · ${ev.time}</div>
+            <div class="ev-select-dress" style="font-size:0.7rem; color:var(--text-light); margin-top:2px; font-style:italic;">👗 ${ev.dress}</div>
+          </div>
+        </div>
+        <div class="ev-toggle">${isOn ? "✓" : ""}</div>
+      </div>`;
+  }).join("");
+
+  // Wire toggle clicks
+  elEventToggles.querySelectorAll(".event-select-block").forEach(block => {
+    block.addEventListener("click", () => {
+      const key = block.dataset.key;
+      if (attendingEvents.has(key)) {
+        attendingEvents.delete(key);
+        block.classList.remove("attending");
+        block.classList.add("skipping");
+        block.querySelector(".ev-toggle").textContent = "";
+      } else {
+        attendingEvents.add(key);
+        block.classList.add("attending");
+        block.classList.remove("skipping");
+        block.querySelector(".ev-toggle").textContent = "✓";
+      }
+    });
+  });
+}
+
+function changeCount(delta) {
+  headcount = Math.max(1, Math.min(20, headcount + delta));
+  elCountDisp.textContent = headcount;
+}
+
+// ════════════════════════════════════════════════
+//  SUBMIT RSVP
+// ════════════════════════════════════════════════
+async function submitRSVP(answer, count, eventsAttending) {
+  // Disable all action buttons
+  elBtnYes.disabled    = true;
+  elBtnNo.disabled     = true;
+  elBtnSubmit.disabled = true;
+  elRsvpSaving.style.display = "block";
+
+  // Hide any previous error
+  const elRsvpError = document.getElementById("rsvp-error-msg");
+  if (elRsvpError) elRsvpError.style.display = "none";
+
+  const elEmailInput = document.getElementById("guest-email-input");
+  const emailVal = elEmailInput ? elEmailInput.value.trim() : "";
+
+  // Require valid email for all RSVPs
+  if (!emailVal || !emailVal.includes("@")) {
+    elRsvpSaving.style.display = "none";
+    elBtnYes.disabled    = false;
+    elBtnNo.disabled     = false;
+    elBtnSubmit.disabled = false;
+    if (elRsvpError) {
+      elRsvpError.textContent = "Please enter a valid email address so we can send your confirmation.";
+      elRsvpError.style.display = "block";
+    }
+    return;
+  }
+
+  try {
+    if (isPasswordLogin) {
+      const prefix = guestName.replace(/\s+/g,'').toUpperCase().slice(0,4).padEnd(4,'X');
+      const suffix = Math.random().toString(36).substring(2,5).toUpperCase();
+      const generatedCode = prefix + suffix;
+
+      const docRef = await addDoc(collection(db, "guests"), {
+        name:             guestName,
+        code:             generatedCode,
+        events:           guestEvents,
+        rsvp:             answer,
+        headcount:        count,
+        eventsAttending:  eventsAttending,
+        photoBase64:      selectedPhotoBase64 || null,
+        photoUploadedAt:  selectedPhotoBase64 ? serverTimestamp() : null,
+        rsvpAt:           serverTimestamp(),
+        createdAt:        serverTimestamp(),
+        contact:          emailVal,
+      });
+      guestDocId = docRef.id;
+    } else {
+      await updateDoc(doc(db, "guests", guestDocId), {
+        rsvp:             answer,
+        headcount:        count,
+        eventsAttending:  eventsAttending,
+        photoBase64:      selectedPhotoBase64 || null,
+        photoUploadedAt:  selectedPhotoBase64 ? serverTimestamp() : null,
+        rsvpAt:           serverTimestamp(),
+        contact:          emailVal,
+      });
+    }
+
+    // Success - transition UI
+    elRsvpSaving.style.display = "none";
+    elStepAttend.style.display  = "none";
+    elStepDetails.classList.remove("active");
+    renderConfirmed(answer, count, eventsAttending);
+
+    // Send confirmation email if guest has an email and EmailJS is configured
+    if (answer === "yes" || (answer === "no" && guestContact)) {
+      sendConfirmationEmail(answer, eventsAttending);
+    }
+  } catch(e) {
+    console.error("RSVP save error:", e);
+    elRsvpSaving.style.display = "none";
+    elBtnYes.disabled    = false;
+    elBtnNo.disabled     = false;
+    elBtnSubmit.disabled = false;
+    if (elRsvpError) {
+      elRsvpError.textContent = "Could not save your RSVP: " + e.message + ". Please make sure you have updated your Firebase config in wedding-rsvp.html.";
+      elRsvpError.style.display = "block";
+    }
+  }
+}
+
+async function sendConfirmationEmail(answer, eventsAttending) {
+  try {
+    var ejsCfg = EMAILJS_CONFIG;
+    if (!ejsCfg || !ejsCfg.pubKey || !ejsCfg.serviceId || !ejsCfg.confirmTpl) return;
+
+    var emailVal = (document.getElementById("guest-email-input").value || "").trim() || guestContact;
+    if (!emailVal || !emailVal.includes("@")) return;
+
+    var nameVal = isPasswordLogin ? guestName : elName.textContent;
+
+    emailjs.init({ publicKey: ejsCfg.pubKey });
+
+    var eventNames = (eventsAttending || []).map(function(e) {
+      var labels = { wedding:"The Wedding", haldi:"Haldi Ceremony", sangeet:"Sangeet Night", mehendi:"Mehendi" };
+      return labels[e] || e;
+    }).join(", ");
+
+    var templateParams = {
+      to_name:          nameVal,
+      to_email:         emailVal,
+      reply_to:         emailVal,
+      rsvp_status:      answer === "yes" ? "Attending" : "Not attending",
+      events_attending: answer === "yes" ? eventNames : "—",
+      headcount:        answer === "yes" ? headcount : 0,
+    };
+    var response = await emailjs.send(ejsCfg.serviceId, ejsCfg.confirmTpl, templateParams);
+    if (response.status === 200) {
+      console.log("Confirmation email sent to", emailVal);
+    }
+  } catch(e) {
+    console.error("Confirmation email failed:", e);
+  }
+}
+
+// ════════════════════════════════════════════════
+//  CONFIRMED SCREEN
+// ════════════════════════════════════════════════
+function renderConfirmed(answer, count, eventsAttending) {
+  elConfirmed.style.display = "block";
+
+  if (answer === "yes") {
+    elConfIcon.textContent = "🌸";
+    elConfText.textContent = `We are so thrilled to celebrate with you${count > 1 ? " and your " + (count - 1) + " guest" + (count > 2 ? "s" : "") : ""}. See you there!`;
+
+    // Summary of which events
+    elConfSummary.style.display = "block";
+    const rows = guestEvents.map(key => {
+      const ev = EVENTS[key]; if (!ev) return "";
+      const going = eventsAttending.includes(key);
+      return `<div class="confirmed-event-row">
+        <span class="${going ? "tick" : "cross"}">${going ? "✓" : "✗"}</span>
+        <span style="color:${going ? "var(--text-dark)" : "var(--text-light)"}">${ev.label}</span>
+        ${going ? "" : '<span style="font-size:0.7rem;color:var(--text-light)">(not attending)</span>'}
+      </div>`;
+    }).join("");
+    elConfSummary.innerHTML = `<div class="confirmed-summary-label">Your event attendance</div>${rows}`;
+
+    // Show the uploaded photo if selected
+    if (selectedPhotoBase64) {
+      elConfPhoto.style.display = "block";
+      elConfImg.src = selectedPhotoBase64;
+    } else {
+      elConfPhoto.style.display = "none";
+    }
+  } else {
+    elConfIcon.textContent = "✦";
+    elConfText.textContent = "We will miss you dearly. Thank you for letting us know.";
+    elConfSummary.style.display = "none";
+    elConfPhoto.style.display = "none";
+  }
+}
+
+function showAlreadyConfirmed(guest) {
+  elStepAttend.style.display = "none";
+  if (guest.photoBase64) {
+    selectedPhotoBase64 = guest.photoBase64;
+  }
+  renderConfirmed(
+    guest.rsvp,
+    guest.headcount || 1,
+    guest.eventsAttending || guest.events || []
+  );
+}
+
+function showErr(msg) { elError.textContent = msg; elError.style.display = "block"; }
+
+// ════════════════════════════════════════════════
+//  PHOTO UPLOAD
+// ════════════════════════════════════════════════
+var selectedPhotoBase64 = null;
+var selectedPhotoType   = null;
+
+var elPhotoSection  = document.getElementById("photo-section");
+var elPhotoInput    = document.getElementById("photo-input");
+var elPhotoPreview  = document.getElementById("photo-preview");
+var elPhotoImg      = document.getElementById("photo-img");
+
+elPhotoInput.addEventListener("change", function(e) {
+  var file = e.target.files[0];
+  if (!file) return;
+
+  // Allow up to 20MB raw — we compress it before storing
+  if (file.size > 20 * 1024 * 1024) {
+    alert("Please choose a photo under 20MB.");
+    return;
+  }
+
+  selectedPhotoType = file.type;
+  var reader = new FileReader();
+  reader.onload = function(ev) {
+    // Compress using canvas before storing
+    var img = new Image();
+    img.onload = function() {
+      var canvas   = document.createElement("canvas");
+      var MAX_SIZE = 1200; // max width or height in px
+      var ratio    = Math.min(MAX_SIZE / img.width, MAX_SIZE / img.height, 1);
+      canvas.width  = Math.round(img.width  * ratio);
+      canvas.height = Math.round(img.height * ratio);
+      var ctx = canvas.getContext("2d");
+      ctx.drawImage(img, 0, 0, canvas.width, canvas.height);
+      // Compress to JPEG at 80% quality
+      selectedPhotoBase64 = canvas.toDataURL("image/jpeg", 0.80);
+      elPhotoImg.src               = selectedPhotoBase64;
+      elPhotoPreview.style.display = "block";
+    };
+    img.src = ev.target.result;
+  };
+  reader.readAsDataURL(file);
+});
+
+// ✏️ MUSIC SYSTEM INTEGRATION
+var bgMusic = null;
+var mOn = false;
+
+window.syncMusicUI = function(isPlaying) {
+  mOn = isPlaying;
+  var svgEl = document.getElementById('mi');
+  if (svgEl) {
+    svgEl.innerHTML = isPlaying
+      ? `<rect x="1" y="6" width="3" height="7" rx="1.5" fill="#faf3e0"><animate attributeName="height" values="7;10;5;9;7" dur=".8s" repeatCount="indefinite"/><animate attributeName="y" values="6;3;8;4;6" dur=".8s" repeatCount="indefinite"/></rect><rect x="7" y="3" width="3" height="10" rx="1.5" fill="#faf3e0"><animate attributeName="height" values="10;6;12;8;10" dur=".9s" repeatCount="indefinite"/><animate attributeName="y" values="3;7;1;5;3" dur=".9s" repeatCount="indefinite"/></rect><rect x="13" y="4" width="3" height="9" rx="1.5" fill="#faf3e0"><animate attributeName="height" values="9;12;6;10;9" dur=".7s" repeatCount="indefinite"/><animate attributeName="y" values="4;1;7;3;4" dur=".7s" repeatCount="indefinite"/></rect>`
+      : `<path d="M9 2L5 6H2v6h3l4 4V2z" stroke="#faf3e0" stroke-width="1.3" fill="none"/><line x1="13" y1="5" x2="16" y2="13" stroke="#faf3e0" stroke-width="1.5" stroke-linecap="round"/><line x1="16" y1="5" x2="13" y2="13" stroke="#faf3e0" stroke-width="1.5" stroke-linecap="round"/>`;
+  }
+};
+
+function toggleMusic() {
+  if (window.parent && typeof window.parent.toggleMusic === 'function') {
+    window.parent.toggleMusic();
+  } else {
+    // Fallback to local audio player
+    if (!bgMusic) {
+      bgMusic = new Audio('music.mp3');
+      bgMusic.loop = true;
+      bgMusic.volume = 0.6;
+    }
+    mOn = !mOn;
+    if (mOn) {
+      bgMusic.play().catch(function() { mOn = false; });
+    } else {
+      bgMusic.pause();
+    }
+    syncMusicUI(mOn);
+  }
+}
+
+// Initial sync on page load
+document.addEventListener('DOMContentLoaded', function() {
+  if (window.parent && typeof window.parent.isMusicPlaying === 'function') {
+    syncMusicUI(window.parent.isMusicPlaying());
+  }
+});
+</script>
+</body>
+</html>

@@ -1,0 +1,846 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>Wedding Admin — Guest Manager</title>
+<link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,300;0,400;0,500;1,300;1,400&family=Jost:wght@300;400;500&display=swap" rel="stylesheet" />
+<style>
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+  :root {
+    --cream: #FDFAF6; --warm-white: #FAF7F2; --border: #E8E2D9; --border-soft: #F0EBE3;
+    --text-dark: #2C2420; --text-mid: #6B5E57; --text-light: #9E918A;
+    --gold: #B8963E; --gold-light: #F5EDD6; --gold-border: #D4B87A;
+    --green: #3B6D11; --green-light: #EAF3DE;
+    --red: #A32D2D; --red-light: #FCEBEB;
+    --pink: #993556; --pink-light: #FBEAF0;
+    --amber: #854F0B; --amber-light: #FAEEDA;
+  }
+  body { font-family: 'Jost', sans-serif; background: var(--cream); color: var(--text-dark); min-height: 100vh; }
+
+  /* ── Header ── */
+  header {
+    background: #fff; border-bottom: 1px solid var(--border);
+    padding: 0 2rem; display: flex; align-items: center;
+    justify-content: space-between; height: 64px; position: sticky; top: 0; z-index: 100;
+  }
+  .header-title { font-family: 'Cormorant Garamond', serif; font-size: 1.4rem; font-weight: 400; letter-spacing: 0.04em; }
+  .header-title span { color: var(--gold); font-style: italic; }
+  .header-sub { font-size: 0.68rem; color: var(--text-light); letter-spacing: 0.1em; text-transform: uppercase; margin-top: 1px; }
+  .header-right { display: flex; align-items: center; gap: 0.75rem; }
+
+  .fb-badge { font-size: 0.7rem; border-radius: 20px; padding: 4px 12px; letter-spacing: 0.05em; display: flex; align-items: center; gap: 6px; background: #F1EFE8; color: var(--text-light); border: 1px solid var(--border); white-space: nowrap; }
+  .fb-badge.connected { background: var(--green-light); color: var(--green); border-color: #C0DD97; }
+  .dot { width: 7px; height: 7px; border-radius: 50%; display: inline-block; background: currentColor; }
+  @keyframes pulse { 0%,100%{opacity:1} 50%{opacity:0.3} }
+  .dot.pulse { animation: pulse 2s infinite; }
+
+  /* Settings button */
+  .btn-settings {
+    background: none; border: 1px solid var(--border); border-radius: 8px;
+    padding: 7px 14px; font-family: 'Jost', sans-serif; font-size: 0.75rem;
+    letter-spacing: 0.06em; color: var(--text-mid); cursor: pointer;
+    display: flex; align-items: center; gap: 6px; transition: all 0.15s;
+  }
+  .btn-settings:hover { border-color: var(--gold-border); color: var(--gold); background: var(--gold-light); }
+  .btn-settings.active { background: var(--text-dark); color: #fff; border-color: var(--text-dark); }
+  .settings-icon { font-size: 14px; }
+
+  /* ── Settings Drawer ── */
+  .settings-drawer {
+    background: #fff; border-bottom: 1px solid var(--border);
+    overflow: hidden; max-height: 0; transition: max-height 0.35s ease;
+  }
+  .settings-drawer.open { max-height: 900px; }
+  .settings-inner { max-width: 1100px; margin: 0 auto; padding: 1.5rem 2rem; display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 1.5rem; }
+
+  .settings-section h4 {
+    font-size: 0.68rem; text-transform: uppercase; letter-spacing: 0.12em;
+    color: var(--gold); margin-bottom: 0.9rem; font-weight: 500;
+    padding-bottom: 0.5rem; border-bottom: 1px solid var(--border-soft);
+  }
+  .settings-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 0.6rem; }
+  .settings-field label { font-size: 0.68rem; text-transform: uppercase; letter-spacing: 0.08em; color: var(--text-light); display: block; margin-bottom: 3px; }
+  .settings-field input {
+    width: 100%; padding: 8px 10px; font-size: 0.8rem; font-family: monospace;
+    border: 1px solid var(--border); border-radius: 6px; background: var(--warm-white);
+    color: var(--text-dark); outline: none;
+  }
+  .settings-field input:focus { border-color: var(--gold-border); }
+  .settings-field.full { grid-column: 1 / -1; }
+  .settings-field.full input { font-family: 'Jost', sans-serif; font-size: 0.82rem; }
+
+  .settings-actions { display: flex; gap: 0.6rem; margin-top: 1rem; align-items: center; }
+  .btn-save-settings {
+    background: var(--text-dark); color: #fff; border: none; padding: 9px 20px;
+    border-radius: 6px; font-family: 'Jost', sans-serif; font-size: 0.76rem;
+    letter-spacing: 0.08em; text-transform: uppercase; cursor: pointer; transition: background 0.2s;
+  }
+  .btn-save-settings:hover { background: var(--gold); }
+  .btn-clear-settings {
+    background: none; color: var(--text-light); border: 1px solid var(--border);
+    padding: 9px 16px; border-radius: 6px; font-family: 'Jost', sans-serif;
+    font-size: 0.74rem; cursor: pointer; transition: all 0.15s;
+  }
+  .btn-clear-settings:hover { border-color: var(--red); color: var(--red); background: var(--red-light); }
+  .settings-saved { font-size: 0.74rem; color: var(--green); display: none; }
+
+  .rsvp-url-preview {
+    font-size: 0.72rem; color: var(--text-light); margin-top: 0.4rem;
+    font-family: monospace; word-break: break-all; line-height: 1.4;
+  }
+
+  /* ── Main ── */
+  main { max-width: 1100px; margin: 0 auto; padding: 2rem; }
+
+  /* First-time setup notice */
+  .first-setup {
+    background: #fff; border: 1px solid var(--border); border-left: 3px solid var(--gold);
+    border-radius: 10px; padding: 1.25rem 1.5rem; margin-bottom: 2rem;
+  }
+  .first-setup h3 { font-size: 0.74rem; text-transform: uppercase; letter-spacing: 0.12em; color: var(--gold); margin-bottom: 0.75rem; font-weight: 500; }
+  .setup-steps { display: grid; grid-template-columns: repeat(auto-fit, minmax(190px, 1fr)); gap: 0.75rem; }
+  .setup-step { font-size: 0.78rem; color: var(--text-mid); line-height: 1.6; }
+  .setup-step strong { color: var(--text-dark); display: block; margin-bottom: 1px; font-size: 0.76rem; }
+  .setup-step a { color: var(--gold); }
+  .setup-step code { font-family: monospace; background: var(--warm-white); padding: 1px 5px; border-radius: 3px; font-size: 0.73rem; }
+
+  /* Stats */
+  .stats { display: grid; grid-template-columns: repeat(5, 1fr); gap: 1rem; margin-bottom: 2rem; }
+  .stat-card { background: #fff; border: 1px solid var(--border); border-radius: 10px; padding: 1rem 1.25rem; text-align: center; }
+  .stat-num { font-family: 'Cormorant Garamond', serif; font-size: 2rem; font-weight: 300; line-height: 1; }
+  .stat-label { font-size: 0.68rem; text-transform: uppercase; letter-spacing: 0.1em; color: var(--text-light); margin-top: 4px; }
+
+  /* Event pills */
+  .event-pill { display: inline-flex; font-size: 0.66rem; letter-spacing: 0.05em; text-transform: uppercase; padding: 2px 9px; border-radius: 20px; font-weight: 500; margin: 2px; }
+  .pill-wedding { background: var(--gold-light); color: var(--gold); border: 1px solid var(--gold-border); }
+  .pill-haldi   { background: var(--amber-light); color: var(--amber); border: 1px solid #FAC775; }
+  .pill-sangeet { background: var(--pink-light);  color: var(--pink);  border: 1px solid #F4C0D1; }
+  .pill-mehendi { background: var(--green-light); color: var(--green); border: 1px solid #C0DD97; }
+
+  /* Add guest */
+  .add-form { background: #fff; border: 1px solid var(--border); border-radius: 10px; padding: 1.5rem; margin-bottom: 2rem; }
+  .add-form h3 { font-family: 'Cormorant Garamond', serif; font-size: 1.1rem; font-weight: 400; margin-bottom: 1rem; }
+  .form-row { display: grid; grid-template-columns: 1fr 1fr auto; gap: 0.75rem; align-items: end; margin-bottom: 0.75rem; }
+  .form-field label { font-size: 0.68rem; text-transform: uppercase; letter-spacing: 0.08em; color: var(--text-light); display: block; margin-bottom: 4px; }
+  .form-field input { width: 100%; padding: 9px 13px; font-size: 0.85rem; font-family: 'Jost', sans-serif; border: 1px solid var(--border); border-radius: 6px; background: var(--warm-white); color: var(--text-dark); outline: none; }
+  .form-field input:focus { border-color: var(--gold-border); }
+  .section-label { font-size: 0.68rem; text-transform: uppercase; letter-spacing: 0.12em; color: var(--text-light); margin-bottom: 0.5rem; }
+  .events-check { display: flex; gap: 0.5rem; flex-wrap: wrap; }
+  .event-check { display: none; }
+  .event-check-label { cursor: pointer; padding: 6px 14px; border-radius: 20px; font-size: 0.7rem; letter-spacing: 0.05em; text-transform: uppercase; border: 1px solid var(--border); color: var(--text-light); transition: all 0.15s; user-select: none; }
+  .event-check:checked + .event-check-label.wedding { background: var(--gold-light);  color: var(--gold);  border-color: var(--gold-border); }
+  .event-check:checked + .event-check-label.haldi   { background: var(--amber-light); color: var(--amber); border-color: #FAC775; }
+  .event-check:checked + .event-check-label.sangeet { background: var(--pink-light);  color: var(--pink);  border-color: #F4C0D1; }
+  .event-check:checked + .event-check-label.mehendi { background: var(--green-light); color: var(--green); border-color: #C0DD97; }
+  .btn-add { background: var(--text-dark); color: #fff; border: none; padding: 9px 20px; border-radius: 6px; font-family: 'Jost', sans-serif; font-size: 0.78rem; letter-spacing: 0.08em; cursor: pointer; transition: background 0.2s; white-space: nowrap; }
+  .btn-add:hover { background: var(--gold); }
+
+  /* Table */
+  .guest-table-wrap { background: #fff; border: 1px solid var(--border); border-radius: 10px; overflow: hidden; }
+  .table-header { display: flex; align-items: center; justify-content: space-between; padding: 1rem 1.5rem; border-bottom: 1px solid var(--border-soft); }
+  .table-header h3 { font-family: 'Cormorant Garamond', serif; font-size: 1.1rem; font-weight: 400; }
+  .search-input { padding: 7px 12px; font-size: 0.8rem; border: 1px solid var(--border); border-radius: 6px; font-family: 'Jost', sans-serif; background: var(--warm-white); color: var(--text-dark); outline: none; width: 200px; }
+  .search-input:focus { border-color: var(--gold-border); }
+  table { width: 100%; border-collapse: collapse; }
+  thead th { text-align: left; font-size: 0.66rem; text-transform: uppercase; letter-spacing: 0.1em; color: var(--text-light); padding: 0.75rem 1.5rem; border-bottom: 1px solid var(--border-soft); font-weight: 400; }
+  tbody tr { border-bottom: 1px solid var(--border-soft); transition: background 0.1s; }
+  tbody tr:last-child { border-bottom: none; }
+  tbody tr:hover { background: var(--warm-white); }
+  td { padding: 0.85rem 1.5rem; font-size: 0.84rem; vertical-align: middle; }
+  td.name { font-weight: 500; }
+  .code-badge { font-family: monospace; font-size: 0.78rem; color: var(--text-mid); background: var(--warm-white); padding: 3px 8px; border-radius: 4px; border: 1px solid var(--border); }
+  .tag-yes     { background: var(--green-light); color: var(--green); border-radius: 20px; padding: 2px 9px; font-size: 0.68rem; font-weight: 500; }
+  .tag-no      { background: var(--red-light);   color: var(--red);   border-radius: 20px; padding: 2px 9px; font-size: 0.68rem; font-weight: 500; }
+  .tag-pending { background: var(--warm-white); color: var(--text-light); border-radius: 20px; padding: 2px 9px; font-size: 0.68rem; border: 1px solid var(--border); }
+  .pill-skip { background: var(--warm-white); color: var(--text-light); border: 1px solid var(--border); }
+  .headcount-badge { display:inline-flex; align-items:center; justify-content:center; background:var(--green-light); color:var(--green); border:1px solid #C0DD97; border-radius:20px; padding:2px 10px; font-size:0.75rem; font-weight:500; min-width:28px; }
+
+  .btn-email { background: none; border: 1px solid var(--border); padding: 4px 10px; border-radius: 5px; font-size: 0.7rem; font-family: 'Jost', sans-serif; color: var(--text-mid); cursor: pointer; transition: all 0.15s; margin-right: 4px; }
+  .btn-email:hover { border-color: var(--gold-border); color: var(--gold); background: var(--gold-light); }
+  .btn-email:disabled { opacity: 0.4; cursor: not-allowed; }
+  .email-sent { font-size: 0.68rem; color: var(--green); }
+  .btn-action { background: none; border: 1px solid var(--border); padding: 4px 10px; border-radius: 5px; font-size: 0.7rem; font-family: 'Jost', sans-serif; color: var(--text-mid); cursor: pointer; transition: all 0.15s; margin-right: 4px; }
+  .btn-action:hover { border-color: var(--gold-border); color: var(--gold); background: var(--gold-light); }
+  .btn-action.danger:hover { border-color: var(--red); color: var(--red); background: var(--red-light); }
+  .empty-state { text-align: center; padding: 3rem; color: var(--text-light); font-size: 0.85rem; }
+
+  /* Toast */
+  .toast { position: fixed; bottom: 2rem; right: 2rem; background: var(--text-dark); color: #fff; padding: 0.75rem 1.25rem; border-radius: 8px; font-size: 0.8rem; transform: translateY(100px); opacity: 0; transition: all 0.3s; z-index: 999; pointer-events: none; max-width: 320px; }
+  .toast.show { transform: translateY(0); opacity: 1; }
+
+
+  /* ── Photo lightbox ── */
+  .photo-thumb { width: 36px; height: 36px; object-fit: cover; border-radius: 6px; border: 1px solid var(--border); cursor: pointer; transition: transform 0.15s; display: block; }
+  .photo-thumb:hover { transform: scale(1.08); }
+  .no-photo { font-size: 0.7rem; color: var(--text-light); }
+  .lightbox-overlay { position: fixed; inset: 0; background: rgba(0,0,0,0.82); z-index: 1000; display: none; align-items: center; justify-content: center; flex-direction: column; gap: 1rem; }
+  .lightbox-overlay.open { display: flex; }
+  .lightbox-img { max-width: 90vw; max-height: 80vh; border-radius: 12px; object-fit: contain; }
+  .lightbox-name { color: #fff; font-family: 'Cormorant Garamond', serif; font-size: 1.2rem; font-style: italic; opacity: 0.8; }
+  .lightbox-close { position: fixed; top: 1.5rem; right: 1.5rem; background: rgba(255,255,255,0.15); border: none; color: #fff; font-size: 1.2rem; width: 40px; height: 40px; border-radius: 50%; cursor: pointer; display: flex; align-items: center; justify-content: center; }
+  .lightbox-close:hover { background: rgba(255,255,255,0.3); }
+  @media (max-width: 700px) {
+    .stats { grid-template-columns: repeat(3,1fr); }
+    .form-row { grid-template-columns: 1fr; }
+    .settings-inner { grid-template-columns: 1fr; }
+    .settings-grid { grid-template-columns: 1fr; }
+  }
+</style>
+</head>
+<body>
+
+<!-- ── Header ── -->
+<header>
+  <div>
+    <div class="header-title">Wedding Admin <span>— Guest Manager</span></div>
+    <div class="header-sub">RSVP Control Panel</div>
+  </div>
+  <div class="header-right">
+    <div class="fb-badge" id="fb-badge">
+      <span class="dot" id="fb-dot"></span>
+      <span id="fb-text">Not connected</span>
+    </div>
+    <button class="btn-settings" id="btn-settings" >
+      <span class="settings-icon">⚙</span> Settings
+    </button>
+  </div>
+</header>
+
+<!-- ── Settings Drawer ── -->
+<div class="settings-drawer" id="settings-drawer">
+  <div class="settings-inner">
+
+    <!-- Firebase config -->
+    <div class="settings-section">
+      <h4>Firebase Connection</h4>
+      <div class="settings-grid">
+        <div class="settings-field">
+          <label>API Key *</label>
+          <input type="text" id="cfg-apikey" placeholder="AIzaSy..." />
+        </div>
+        <div class="settings-field">
+          <label>Project ID *</label>
+          <input type="text" id="cfg-projectid" placeholder="my-wedding-abc12" />
+        </div>
+        <div class="settings-field">
+          <label>Auth Domain</label>
+          <input type="text" id="cfg-authdomain" placeholder="auto-filled from Project ID" />
+        </div>
+        <div class="settings-field">
+          <label>Storage Bucket</label>
+          <input type="text" id="cfg-bucket" placeholder="auto-filled from Project ID" />
+        </div>
+      </div>
+      <div class="settings-actions">
+        <button class="btn-save-settings" id="btn-save-firebase">Save &amp; Connect</button>
+        <button class="btn-clear-settings" id="btn-clear">Clear Saved Data</button>
+        <span class="settings-saved" id="settings-saved">✓ Saved</span>
+      </div>
+    </div>
+
+    <!-- RSVP URL -->
+    <div class="settings-section">
+      <h4>RSVP Page Link</h4>
+      <p style="font-size:0.78rem;color:var(--text-mid);margin-bottom:0.75rem;line-height:1.6;">
+        Set the base URL of your <strong>wedding-rsvp.html</strong> file once. Every "Copy Link" button will use this automatically.
+      </p>
+      <div class="settings-field full">
+        <label>RSVP Base URL</label>
+        <input type="text" id="cfg-rsvp-url" placeholder="https://yourdomain.com/wedding-rsvp.html"  />
+      </div>
+      <div class="rsvp-url-preview" id="url-preview"></div>
+      <div class="settings-actions">
+        <button class="btn-save-settings" id="btn-save-url">Save URL</button>
+        <span class="settings-saved" id="url-saved">✓ Saved</span>
+      </div>
+    </div>
+
+    <!-- EmailJS config -->
+    <div class="settings-section">
+      <h4>Email — EmailJS</h4>
+      <p style="font-size:0.75rem;color:var(--text-mid);margin-bottom:0.9rem;line-height:1.6;">
+        Free at <a href="https://emailjs.com" target="_blank" style="color:var(--gold)">emailjs.com</a>.
+        Create account → Add Email Service → Add Template → copy IDs below.<br/>
+        <strong>Template variables:</strong> <code>{{to_name}}</code> <code>{{to_email}}</code> <code>{{rsvp_link}}</code> <code>{{events_list}}</code> <code>{{invite_code}}</code>
+      </p>
+      <div class="settings-grid">
+        <div class="settings-field">
+          <label>Public Key</label>
+          <input type="text" id="cfg-ejs-pubkey" placeholder="user_xxxxxxxxxxxx" />
+        </div>
+        <div class="settings-field">
+          <label>Service ID</label>
+          <input type="text" id="cfg-ejs-service" placeholder="service_xxxxxxx" />
+        </div>
+        <div class="settings-field full">
+          <label>Invite Template ID</label>
+          <input type="text" id="cfg-ejs-invite-tpl" placeholder="template_xxxxxxx" />
+        </div>
+        <div class="settings-field full">
+          <label>Confirmation Template ID</label>
+          <input type="text" id="cfg-ejs-confirm-tpl" placeholder="template_xxxxxxx" />
+        </div>
+      </div>
+      <div class="settings-actions">
+        <button class="btn-save-settings" id="btn-save-email">Save Email Settings</button>
+        <span class="settings-saved" id="email-saved">✓ Saved</span>
+      </div>
+    </div>
+
+  </div>
+</div>
+
+<main>
+
+  <!-- First-time setup instructions (hidden once connected) -->
+  <div class="first-setup" id="first-setup">
+    <h3>Getting Started — Firebase Setup</h3>
+    <div class="setup-steps">
+      <div class="setup-step"><strong>1. Create a Firebase project</strong>Go to <a href="https://console.firebase.google.com" target="_blank">console.firebase.google.com</a> → Add project</div>
+      <div class="setup-step"><strong>2. Enable Firestore</strong>Build → Firestore Database → Create database → choose <strong>Test mode</strong></div>
+      <div class="setup-step"><strong>3. Get your config</strong>Project Settings → General → Your apps → Web app → copy <code>apiKey</code> and <code>projectId</code> (or copy the entire configuration block!)</div>
+      <div class="setup-step"><strong>4. Paste &amp; Connect</strong>Open Settings, paste keys, and save. **Firestore Rules Note**: In Test mode, rules expire in 30 days. Make sure your Rules look like `allow read, write: if true;` or similar to allow access without authentication.</div>
+    </div>
+  </div>
+
+  <!-- Stats -->
+  <div class="stats">
+    <div class="stat-card"><div class="stat-num" id="stat-total">0</div><div class="stat-label">Total Invited</div></div>
+    <div class="stat-card"><div class="stat-num" id="stat-yes" style="color:var(--green)">0</div><div class="stat-label">Confirmed</div></div>
+    <div class="stat-card"><div class="stat-num" id="stat-no" style="color:var(--red)">0</div><div class="stat-label">Declined</div></div>
+    <div class="stat-card"><div class="stat-num" id="stat-pending" style="color:var(--text-light)">0</div><div class="stat-label">Pending</div></div>
+    <div class="stat-card"><div class="stat-num" id="stat-heads" style="color:var(--gold)">0</div><div class="stat-label">Total Heads</div></div>
+  </div>
+
+  <!-- Add guest -->
+  <div class="add-form">
+    <h3>Add a Guest</h3>
+    <div class="form-row">
+      <div class="form-field"><label>Guest Name</label><input type="text" id="inp-name" placeholder="Priya Sharma" /></div>
+      <div class="form-field"><label>Phone / Email (optional)</label><input type="text" id="inp-contact" placeholder="priya@email.com" /></div>
+      <button class="btn-add" id="btn-add">+ Add</button>
+    </div>
+    <div class="section-label">Invite to events</div>
+    <div class="events-check">
+      <input type="checkbox" id="ev-wedding" class="event-check" /><label for="ev-wedding" class="event-check-label wedding">Wedding</label>
+      <input type="checkbox" id="ev-haldi"   class="event-check" /><label for="ev-haldi"   class="event-check-label haldi">Haldi</label>
+      <input type="checkbox" id="ev-sangeet" class="event-check" /><label for="ev-sangeet" class="event-check-label sangeet">Sangeet</label>
+      <input type="checkbox" id="ev-mehendi" class="event-check" /><label for="ev-mehendi" class="event-check-label mehendi">Mehendi</label>
+    </div>
+  </div>
+
+  <!-- Guest table -->
+  <div class="guest-table-wrap">
+    <div class="table-header">
+      <h3>Guest List</h3>
+      <input class="search-input" type="text" placeholder="Search guests..." id="search-input" />
+    </div>
+    <table>
+      <thead><tr><th>Name</th><th>Code</th><th>Invited To</th><th>RSVP</th><th>Guests</th><th>Attending Events</th><th>Actions</th></tr></thead>
+      <tbody id="guest-tbody"><tr><td colspan="8"><div class="empty-state">✦ &nbsp; No guests added yet</div></td></tr></tbody>
+    </table>
+  </div>
+
+</main>
+
+<div class="lightbox-overlay" id="lightbox">
+  <button class="lightbox-close" id="lightbox-close-btn">✕</button>
+  <img class="lightbox-img" id="lightbox-img" src="" alt="" />
+  <div class="lightbox-name" id="lightbox-name"></div>
+</div>
+
+<div class="toast" id="toast"></div>
+
+<script src="https://cdn.jsdelivr.net/npm/@emailjs/browser@4/dist/email.min.js"></script>
+<script type="module">
+import { initializeApp, getApps, deleteApp } from 'https://www.gstatic.com/firebasejs/10.12.2/firebase-app.js';
+import { getFirestore, collection, addDoc, deleteDoc, doc, updateDoc,
+         onSnapshot, query, orderBy, serverTimestamp } from 'https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js';
+
+const KEY_CONFIG = 'wedding_admin_firebase';
+const KEY_URL    = 'wedding_rsvp_base_url';
+
+let db     = null;
+let guests = [];
+let unsub  = null;
+
+const pc = { wedding:'pill-wedding', haldi:'pill-haldi', sangeet:'pill-sangeet', mehendi:'pill-mehendi' };
+const rc = { yes:'tag-yes', no:'tag-no', pending:'tag-pending' };
+const rl = { yes:'Attending', no:'Declined', pending:'Awaiting' };
+
+// ── Toast ──────────────────────────────────────────────────
+function toast(msg) {
+  const el = document.getElementById('toast');
+  el.textContent = msg;
+  el.classList.add('show');
+  setTimeout(function() { el.classList.remove('show'); }, 2800);
+}
+
+// ── Settings drawer ────────────────────────────────────────
+function toggleSettings() {
+  const drawer = document.getElementById('settings-drawer');
+  const btn    = document.getElementById('btn-settings');
+  const open   = drawer.classList.toggle('open');
+  btn.classList.toggle('active', open);
+}
+
+function loadSettingsUI() {
+  try {
+    var cfg = JSON.parse(localStorage.getItem(KEY_CONFIG) || 'null');
+    if (cfg) {
+      document.getElementById('cfg-apikey').value     = cfg.apiKey || '';
+      document.getElementById('cfg-projectid').value  = cfg.projectId || '';
+      document.getElementById('cfg-authdomain').value = cfg.authDomain || '';
+      document.getElementById('cfg-bucket').value     = cfg.storageBucket || '';
+    }
+  } catch(e) {}
+  var url = localStorage.getItem(KEY_URL) || '';
+  document.getElementById('cfg-rsvp-url').value = url;
+  updateUrlPreview();
+}
+
+function getSavedConfig() {
+  try { return JSON.parse(localStorage.getItem(KEY_CONFIG)); } catch(e) { return null; }
+}
+
+function updateUrlPreview() {
+  var base    = document.getElementById('cfg-rsvp-url').value.trim();
+  var preview = document.getElementById('url-preview');
+  preview.textContent = base ? base + '?code=ABCXYZ  (example)' : '';
+}
+
+function saveRsvpUrl() {
+  var url = document.getElementById('cfg-rsvp-url').value.trim();
+  localStorage.setItem(KEY_URL, url);
+  updateUrlPreview();
+  var saved = document.getElementById('url-saved');
+  saved.style.display = 'inline';
+  setTimeout(function() { saved.style.display = 'none'; }, 2000);
+  toast('RSVP URL saved!');
+}
+
+function clearSettings() {
+  if (!confirm('Clear all saved settings?')) return;
+  localStorage.removeItem(KEY_CONFIG);
+  localStorage.removeItem(KEY_URL);
+  document.getElementById('cfg-apikey').value     = '';
+  document.getElementById('cfg-projectid').value  = '';
+  document.getElementById('cfg-authdomain').value = '';
+  document.getElementById('cfg-bucket').value     = '';
+  document.getElementById('cfg-rsvp-url').value   = '';
+  updateUrlPreview();
+  setStatus(false);
+  toast('Settings cleared.');
+}
+
+async function saveAndConnect() {
+  var apiKeyInput = document.getElementById('cfg-apikey').value.trim();
+  var projectIdInput = document.getElementById('cfg-projectid').value.trim();
+
+  // Auto-parse if the entire config object was pasted in either field
+  var pastedConfig = null;
+  var possibleJson = apiKeyInput.includes('{') ? apiKeyInput : (projectIdInput.includes('{') ? projectIdInput : null);
+  
+  if (possibleJson) {
+    try {
+      var cleanJson = possibleJson
+        .replace(/([{,]\s*)([a-zA-Z0-9_]+)\s*:/g, '$1"$2":')
+        .replace(/:\s*'([^']*)'/g, ':"$1"')
+        .replace(/,\s*([}\]])/g, '$1');
+      var match = cleanJson.match(/\{[\s\S]*\}/);
+      if (match) pastedConfig = JSON.parse(match[0]);
+    } catch (e) {
+      var keyMatch = possibleJson.match(/apiKey\s*:\s*["']([^"']+)["']/);
+      var projMatch = possibleJson.match(/projectId\s*:\s*["']([^"']+)["']/);
+      var authMatch = possibleJson.match(/authDomain\s*:\s*["']([^"']+)["']/);
+      var buckMatch = possibleJson.match(/storageBucket\s*:\s*["']([^"']+)["']/);
+      if (keyMatch && projMatch) {
+        pastedConfig = {
+          apiKey: keyMatch[1],
+          projectId: projMatch[1],
+          authDomain: authMatch ? authMatch[1] : "",
+          storageBucket: buckMatch ? buckMatch[1] : ""
+        };
+      }
+    }
+  }
+
+  if (pastedConfig) {
+    document.getElementById('cfg-apikey').value = pastedConfig.apiKey || '';
+    document.getElementById('cfg-projectid').value = pastedConfig.projectId || '';
+    if (pastedConfig.authDomain) document.getElementById('cfg-authdomain').value = pastedConfig.authDomain;
+    if (pastedConfig.storageBucket) document.getElementById('cfg-bucket').value = pastedConfig.storageBucket;
+    apiKeyInput = pastedConfig.apiKey || '';
+    projectIdInput = pastedConfig.projectId || '';
+    toast('Config parsed and auto-filled!');
+  }
+
+  var apiKey = apiKeyInput;
+  var projectId = projectIdInput;
+  var authDomain = document.getElementById('cfg-authdomain').value.trim() || projectId + '.firebaseapp.com';
+  var storageBucket = document.getElementById('cfg-bucket').value.trim() || projectId + '.appspot.com';
+
+  if (!apiKey || !projectId) { toast('API Key and Project ID are required'); return; }
+
+  var cfg = { apiKey: apiKey, projectId: projectId, authDomain: authDomain, storageBucket: storageBucket };
+  localStorage.setItem(KEY_CONFIG, JSON.stringify(cfg));
+
+  var saved = document.getElementById('settings-saved');
+  saved.style.display = 'inline';
+  setTimeout(function() { saved.style.display = 'none'; }, 2000);
+
+  await connectFirebase(cfg);
+  document.getElementById('settings-drawer').classList.remove('open');
+  document.getElementById('btn-settings').classList.remove('active');
+}
+
+// ── Firebase ────────────────────────────────────────────────
+async function connectFirebase(cfg) {
+  try {
+    try {
+      var existing = getApps().find(function(a) { return a.name === 'wedding-admin'; });
+      if (existing) await deleteApp(existing);
+    } catch(e) {
+      console.warn("Existing app delete warning:", e);
+    }
+
+    var app = initializeApp(cfg, 'wedding-admin');
+    db = getFirestore(app);
+
+    if (unsub) unsub();
+    var q = query(collection(db, 'guests'), orderBy('createdAt', 'desc'));
+    unsub = onSnapshot(q,
+      function(snap) {
+        guests = snap.docs.map(function(d) { return Object.assign({ id: d.id }, d.data()); });
+        renderTable();
+        updateStats();
+        setStatus(true);
+      },
+      function(err) {
+        setStatus(false, err.message);
+        toast('Firestore connection failed: ' + err.message);
+      }
+    );
+
+    document.getElementById('first-setup').style.display = 'none';
+    toast('Initializing connection…');
+  } catch(e) {
+    setStatus(false, e.message);
+    toast('Connection failed: ' + e.message);
+  }
+}
+
+function setStatus(connected, errMessage) {
+  var badge = document.getElementById('fb-badge');
+  var dot   = document.getElementById('fb-dot');
+  var text  = document.getElementById('fb-text');
+  if (connected) {
+    badge.className  = 'fb-badge connected';
+    dot.className    = 'dot pulse';
+    text.textContent = 'Connected';
+    badge.style.borderColor = '';
+    badge.style.color = '';
+    badge.style.background = '';
+  } else {
+    badge.className  = 'fb-badge';
+    dot.className    = 'dot';
+    if (errMessage) {
+      text.textContent = 'Error: ' + errMessage;
+      badge.style.borderColor = 'var(--red)';
+      badge.style.color = 'var(--red)';
+      badge.style.background = 'var(--red-light)';
+    } else {
+      text.textContent = 'Not connected';
+      badge.style.borderColor = '';
+      badge.style.color = '';
+      badge.style.background = '';
+    }
+  }
+}
+
+// ── Add / Delete guests ─────────────────────────────────────
+async function addGuest() {
+  if (!db) { toast('Not connected. Open Settings first.'); return; }
+  var name = document.getElementById('inp-name').value.trim();
+  if (!name) { toast('Please enter a guest name'); return; }
+
+  var events = ['wedding','haldi','sangeet','mehendi'].filter(function(e) {
+    return document.getElementById('ev-' + e).checked;
+  });
+  if (!events.length) { toast('Select at least one event'); return; }
+
+  var prefix = name.replace(/\s+/g,'').toUpperCase().slice(0,4).padEnd(4,'X');
+  var suffix = Math.random().toString(36).substring(2,5).toUpperCase();
+  var code   = prefix + suffix;
+
+  await addDoc(collection(db, 'guests'), {
+    name:      name,
+    contact:   document.getElementById('inp-contact').value.trim(),
+    events:    events,
+    code:      code,
+    rsvp:      'pending',
+    createdAt: serverTimestamp()
+  });
+
+  document.getElementById('inp-name').value    = '';
+  document.getElementById('inp-contact').value = '';
+  ['wedding','haldi','sangeet','mehendi'].forEach(function(e) {
+    document.getElementById('ev-' + e).checked = false;
+  });
+  toast('Guest added! Code: ' + code);
+}
+
+window.deleteGuest = async function(id) {
+  if (!confirm('Remove this guest?')) return;
+  await deleteDoc(doc(db, 'guests', id));
+};
+
+window.copyLink = function(code) {
+  var base = localStorage.getItem(KEY_URL) || '';
+  if (!base) {
+    toast('Set your RSVP URL in Settings first!');
+    document.getElementById('settings-drawer').classList.add('open');
+    document.getElementById('btn-settings').classList.add('active');
+    return;
+  }
+  var url = base.replace(/\?.*$/, '') + '?code=' + code;
+  navigator.clipboard.writeText(url)
+    .then(function()  { toast('Link copied for ' + code); })
+    .catch(function() { toast('Code: ' + code); });
+};
+
+// ── Table ───────────────────────────────────────────────────
+function buildRow(g) {
+  var invited   = g.events || [];
+  var attending = g.eventsAttending || [];
+
+  // Invited pills
+  var invitedHtml = '';
+  for (var i = 0; i < invited.length; i++) {
+    invitedHtml += '<span class="event-pill ' + pc[invited[i]] + '">' + invited[i] + '</span>';
+  }
+
+  // Headcount
+  var headcountHtml = g.rsvp === 'yes'
+    ? '<span class="headcount-badge">' + (g.headcount || 1) + '</span>'
+    : '<span style="font-size:0.72rem;color:var(--text-light)">—</span>';
+
+  // Attending events
+  var attendingHtml = '';
+  if (g.rsvp === 'yes') {
+    for (var j = 0; j < invited.length; j++) {
+      var ev      = invited[j];
+      var isGoing = attending.indexOf(ev) !== -1;
+      if (isGoing) {
+        attendingHtml += '<span class="event-pill ' + pc[ev] + '">' + ev + '</span>';
+      } else {
+        attendingHtml += '<span class="event-pill pill-skip" style="text-decoration:line-through">' + ev + '</span>';
+      }
+    }
+  } else if (g.rsvp === 'no') {
+    attendingHtml = '<span style="font-size:0.72rem;color:var(--text-light)">Not attending</span>';
+  } else {
+    attendingHtml = '<span style="font-size:0.72rem;color:var(--text-light)">—</span>';
+  }
+
+  var nameSub = g.contact
+    ? '<br><span style="font-size:0.72rem;color:var(--text-light);font-weight:400">' + g.contact + '</span>'
+    : '';
+
+  var photoHtml = g.photoBase64
+    ? '<img class="photo-thumb" src="' + g.photoBase64 + '" onclick="openLightbox(&quot;' + g.photoBase64 + '&quot;,&quot;' + g.name + '&quot;)" title="Click to view" />'
+    : '<span class="no-photo">—</span>';
+
+  var emailBtn = g.contact
+    ? '<button class="btn-email" onclick="sendInviteEmail(&quot;' + g.id + '&quot;)" id="ebtn-' + g.id + '">' + (g.inviteEmailSent ? '✓ Sent' : 'Send Invite') + '</button>'
+    : '<span class="email-sent" title="No email on file">—</span>';
+
+  return '<tr>'
+    + '<td class="name">' + g.name + nameSub + '</td>'
+    + '<td>' + invitedHtml + '</td>'
+    + '<td><span class="code-badge">' + g.code + '</span></td>'
+    + '<td><span class="' + (rc[g.rsvp] || 'tag-pending') + '">' + (rl[g.rsvp] || 'Awaiting') + '</span></td>'
+    + '<td style="text-align:center">' + headcountHtml + '</td>'
+    + '<td>' + attendingHtml + '</td>'
+    + '<td>' + photoHtml + '</td>'
+    + '<td>'
+    + emailBtn + ' '
+    + '<button class="btn-action" onclick="copyLink(&quot;' + g.code + '&quot;)">Copy Link</button> '
+    + '<button class="btn-action danger" onclick="deleteGuest(&quot;' + g.id + '&quot;)">Remove</button>'
+    + '</td>'
+    + '</tr>';
+}
+
+function renderTable(search) {
+  search = search || '';
+  var tbody = document.getElementById('guest-tbody');
+  var q     = search.toLowerCase();
+  var list  = guests.filter(function(g) { return g.name.toLowerCase().indexOf(q) !== -1; });
+
+  if (!list.length) {
+    tbody.innerHTML = '<tr><td colspan="8"><div class="empty-state">✦ &nbsp; No guests found</div></td></tr>';
+    return;
+  }
+  tbody.innerHTML = list.map(buildRow).join('');
+}
+
+function updateStats() {
+  var confirmed   = guests.filter(function(g) { return g.rsvp === 'yes'; });
+  var totalHeads  = confirmed.reduce(function(sum, g) { return sum + (g.headcount || 1); }, 0);
+  document.getElementById('stat-total').textContent   = guests.length;
+  document.getElementById('stat-yes').textContent     = confirmed.length;
+  document.getElementById('stat-no').textContent      = guests.filter(function(g) { return g.rsvp === 'no'; }).length;
+  document.getElementById('stat-pending').textContent = guests.filter(function(g) { return g.rsvp === 'pending'; }).length;
+  document.getElementById('stat-heads').textContent   = totalHeads;
+}
+
+// ── Lightbox ────────────────────────────────────────────────
+var elLightbox      = document.getElementById('lightbox');
+var elLightboxImg   = document.getElementById('lightbox-img');
+var elLightboxName  = document.getElementById('lightbox-name');
+var elLightboxClose = document.getElementById('lightbox-close-btn');
+
+function closeLightbox() {
+  elLightbox.classList.remove('open');
+  elLightboxImg.src = '';
+}
+
+window.openLightbox = function(src, name) {
+  elLightboxImg.src            = src;
+  elLightboxName.textContent   = name;
+  elLightbox.classList.add('open');
+};
+
+// Close on overlay click (but NOT when clicking the image itself)
+elLightbox.addEventListener('click', function(e) {
+  if (e.target === elLightbox) closeLightbox();
+});
+
+// Close button
+elLightboxClose.addEventListener('click', function(e) {
+  e.stopPropagation();
+  closeLightbox();
+});
+
+// Close on Escape key
+document.addEventListener('keydown', function(e) {
+  if (e.key === 'Escape') closeLightbox();
+});
+
+// Stop image click from bubbling to overlay
+elLightboxImg.addEventListener('click', function(e) {
+  e.stopPropagation();
+});
+
+
+var KEY_EMAIL = 'wedding_email_settings';
+
+function getEmailSettings() {
+  try { return JSON.parse(localStorage.getItem(KEY_EMAIL) || 'null'); } catch(e) { return null; }
+}
+
+function loadEmailSettingsUI() {
+  var cfg = getEmailSettings();
+  if (!cfg) return;
+  document.getElementById('cfg-ejs-pubkey').value      = cfg.pubKey      || '';
+  document.getElementById('cfg-ejs-service').value     = cfg.serviceId   || '';
+  document.getElementById('cfg-ejs-invite-tpl').value  = cfg.inviteTpl   || '';
+  document.getElementById('cfg-ejs-confirm-tpl').value = cfg.confirmTpl  || '';
+}
+
+function saveEmailSettings() {
+  var cfg = {
+    pubKey:     document.getElementById('cfg-ejs-pubkey').value.trim(),
+    serviceId:  document.getElementById('cfg-ejs-service').value.trim(),
+    inviteTpl:  document.getElementById('cfg-ejs-invite-tpl').value.trim(),
+    confirmTpl: document.getElementById('cfg-ejs-confirm-tpl').value.trim(),
+  };
+  if (!cfg.pubKey || !cfg.serviceId) { toast('Public Key and Service ID are required'); return; }
+  localStorage.setItem(KEY_EMAIL, JSON.stringify(cfg));
+  emailjs.init({ publicKey: cfg.pubKey });
+  var saved = document.getElementById('email-saved');
+  saved.style.display = 'inline';
+  setTimeout(function() { saved.style.display = 'none'; }, 2000);
+  toast('Email settings saved!');
+}
+
+// Init emailjs if already configured
+var _ejsCfg = getEmailSettings();
+if (_ejsCfg && _ejsCfg.pubKey) { emailjs.init({ publicKey: _ejsCfg.pubKey }); }
+
+window.sendInviteEmail = async function(guestId) {
+  var g = guests.find(function(x) { return x.id === guestId; });
+  if (!g || !g.contact) { toast('No email address for this guest'); return; }
+
+  var ejsCfg = getEmailSettings();
+  if (!ejsCfg || !ejsCfg.pubKey || !ejsCfg.serviceId || !ejsCfg.inviteTpl) {
+    toast('Set up EmailJS in Settings first');
+    document.getElementById('settings-drawer').classList.add('open');
+    document.getElementById('btn-settings').classList.add('active');
+    return;
+  }
+
+  var rsvpBase = localStorage.getItem('wedding_rsvp_base_url') || '';
+  if (!rsvpBase) { toast('Set your RSVP URL in Settings first'); return; }
+
+  var rsvpLink   = rsvpBase.replace(/\?.*$/, '') + '?code=' + g.code;
+  var eventNames = (g.events || []).map(function(e) {
+    var labels = { wedding:'The Wedding', haldi:'Haldi Ceremony', sangeet:'Sangeet Night', mehendi:'Mehendi' };
+    return labels[e] || e;
+  }).join(', ');
+
+  var btn = document.getElementById('ebtn-' + guestId);
+  if (btn) { btn.disabled = true; btn.textContent = 'Sending…'; }
+
+  try {
+    // EmailJS requires recipient set via template params
+    // The "To Email" field in your EmailJS template must be set to {{to_email}}
+    var templateParams = {
+      to_name:     g.name,
+      to_email:    g.contact,   // must match "To Email" field in your template
+      reply_to:    g.contact,
+      invite_code: g.code,
+      rsvp_link:   rsvpLink,
+      events_list: eventNames,
+    };
+
+    var response = await emailjs.send(ejsCfg.serviceId, ejsCfg.inviteTpl, templateParams);
+
+    if (response.status === 200) {
+      await updateDoc(doc(db, 'guests', guestId), { inviteEmailSent: true });
+      toast('Invite sent to ' + g.name + '!');
+      if (btn) { btn.textContent = '\u2713 Sent'; btn.disabled = true; }
+    } else {
+      throw new Error('Status ' + response.status);
+    }
+  } catch(e) {
+    var errMsg = (e && e.text) ? e.text : (e && e.message) ? e.message : JSON.stringify(e);
+    toast('Email failed: ' + errMsg);
+    if (btn) { btn.disabled = false; btn.textContent = 'Send Invite'; }
+  }
+};
+
+// ── Wire all listeners ──────────────────────────────────────
+document.getElementById('btn-settings').addEventListener('click',    toggleSettings);
+document.getElementById('btn-save-firebase').addEventListener('click', saveAndConnect);
+document.getElementById('btn-save-url').addEventListener('click',    saveRsvpUrl);
+document.getElementById('btn-save-email').addEventListener('click',  saveEmailSettings);
+document.getElementById('btn-clear').addEventListener('click',       clearSettings);
+document.getElementById('cfg-rsvp-url').addEventListener('input',    updateUrlPreview);
+document.getElementById('btn-add').addEventListener('click',         addGuest);
+document.getElementById('search-input').addEventListener('input', function(e) { renderTable(e.target.value); });
+
+// ── Init ────────────────────────────────────────────────────
+loadSettingsUI();
+loadEmailSettingsUI();
+var savedCfg = getSavedConfig();
+if (savedCfg && savedCfg.apiKey && savedCfg.projectId) {
+  connectFirebase(savedCfg);
+} else {
+  document.getElementById('settings-drawer').classList.add('open');
+  document.getElementById('btn-settings').classList.add('active');
+}
+</script>
+</body>
+</html>
